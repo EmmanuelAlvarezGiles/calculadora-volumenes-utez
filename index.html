@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarea Integradora UTEZ | Cálculo Vectorial</title>
+    <style>
+        /* --- VARIABLES --- */
+        :root {
+            --utez-green: #00965e;
+            --utez-dark: #004d33;
+            --utez-gold: #eeb310;
+            --bg-color: #f8f9fa;
+            --text-color: #333;
+            --card-bg: #ffffff;
+            --header-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-color);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* --- HEADER ESTILO IMAGEN 5 --- */
+        header {
+            background-color: var(--header-bg);
+            width: 100%;
+            border-top: 10px solid var(--utez-green);
+            border-bottom: 5px solid var(--utez-green);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            padding: 20px 40px;
+            box-sizing: border-box;
+            text-align: center;
+            position: relative;
+        }
+
+        .header-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .logo-utez {
+            height: 70px; /* Ajusta según tu imagen real */
+            display: block;
+        }
+
+        /* Botón Modo Halcón discreto */
+        .toggle-mode {
+            background: var(--utez-green);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .toggle-mode:hover { background: var(--utez-dark); }
+
+        .header-content h1 {
+            color: var(--utez-dark);
+            font-size: 2.2rem;
+            margin: 0;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #555;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+
+        .profesor {
+            color: var(--utez-green);
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .integrantes {
+            margin-top: 15px;
+            font-size: 0.95rem;
+            color: #666;
+            font-style: italic;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            display: inline-block;
+        }
+
+        /* --- MENÚ DE FIGURAS 3D --- */
+        .menu-container {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin: 50px auto;
+            max-width: 1200px;
+            flex-wrap: wrap;
+            perspective: 1000px;
+            padding: 0 20px;
+        }
+
+        .shape-card {
+            width: 150px;  /* Un poco más ancho para las imágenes */
+            height: 170px; /* Un poco más alto */
+            background: var(--card-bg);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+            transition: transform 0.4s, box-shadow 0.4s;
+            border-bottom: 4px solid var(--utez-green);
+            text-align: center;
+            padding: 10px;
+        }
+
+        .shape-card:hover {
+            transform: translateY(-12px) rotateX(5deg);
+            box-shadow: 0 20px 30px rgba(0,150,94,0.2);
+            border-bottom-color: var(--utez-gold);
+        }
+
+        /* NUEVO ESTILO PARA LAS IMÁGENES */
+        .shape-img {
+            height: 80px; /* Altura fija para que todas se vean parejas */
+            width: auto;  /* El ancho se ajusta automáticamente */
+            margin-bottom: 10px;
+            object-fit: contain; /* Asegura que la imagen se vea completa */
+        }
+
+        .shape-card span {
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: var(--utez-dark);
+        }
+
+        /* --- ÁREA DE CÁLCULO --- */
+        #calculation-area {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            display: none;
+            border: 1px solid #eee;
+            border-top: 5px solid var(--utez-green);
+            margin-bottom: 50px;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-group { margin: 15px 0; text-align: left; }
+        
+        label { 
+            display: block; 
+            margin-bottom: 5px; 
+            font-weight: 600; 
+            color: var(--utez-dark); 
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            background: #fafafa;
+        }
+
+        input:focus {
+            border-color: var(--utez-green);
+            outline: none;
+            background: #fff;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button.action-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .btn-calc { background-color: var(--utez-dark); color: white; }
+        .btn-clear { background-color: #e74c3c; color: white; }
+        
+        button.action-btn:hover { opacity: 0.9; }
+
+        #result {
+            margin-top: 25px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--utez-green);
+            padding: 10px;
+            background: rgba(0,150,94,0.1);
+            border-radius: 8px;
+        }
+
+        /* --- MODO OSCURO --- */
+        body.dark-mode {
+            --bg-color: #121212;
+            --text-color: #f0f0f0;
+            --card-bg: #1e1e1e;
+            --header-bg: #1a1a1a;
+        }
+        
+        body.dark-mode .header-content h1 { color: #fff; }
+        body.dark-mode .subtitle { color: #ccc; }
+        body.dark-mode .integrantes { color: #aaa; border-top-color: #333; }
+        body.dark-mode .header-top-bar { border-bottom-color: #333; }
+        body.dark-mode input { background: #333; border-color: #444; color: white; }
+        body.dark-mode label { color: var(--utez-gold); }
+        body.dark-mode .shape-card span { color: #fff; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-top-bar">
+            <img src="img/logo-utez.png" alt="Logo UTEZ" class="logo-utez">
+            <button class="toggle-mode" onclick="toggleTheme()">🌙 Modo Halcón</button>
+        </div>
+        
+        <div class="header-content">
+            <h1>Tarea Integradora Cálculo de Varias Variables</h1>
+            <p class="subtitle">Propósito: Cálculo de Volúmenes 3D</p>
+            <p class="profesor">Profesor: Luis Ramirez</p>
+            
+            <div class="integrantes">
+                Integrantes: | Rodrigo Arvizu | Jose Manuel | Uriel Solano | Emmanuel Alvarez | Eliel Vasquez |
+            </div>
+        </div>
+    </header>
+
+    <main class="menu-container">
+        <div class="shape-card" onclick="selectShape('elipsoide')">
+            <img src="img/elipsoide.jpg" alt="Elipsoide" class="shape-img">
+            <span>Elipsoide</span>
+        </div>
+        <div class="shape-card" onclick="selectShape('conoEliptico')">
+            <img src="img/cono.jpg" alt="Cono Elíptico" class="shape-img">
+            <span>Cono Elíptico</span>
+        </div>
+        <div class="shape-card" onclick="selectShape('hiper2hojas')">
+            <img src="img/hiper2.jpg" alt="Hiperboloide de dos hojas" class="shape-img">
+            <span>Hiperboloide (2 hojas)</span>
+        </div>
+        <div class="shape-card" onclick="selectShape('hiper1hoja')">
+            <img src="img/hiper1.jpg" alt="Hiperboloide de una hoja" class="shape-img">
+            <span>Hiperboloide (1 hoja)</span>
+        </div>
+        <div class="shape-card" onclick="selectShape('paraboloide')">
+            <img src="img/paraboloide.jpg" alt="Paraboloide Elíptico" class="shape-img">
+            <span>Paraboloide Elíptico</span>
+        </div>
+    </main>
+
+    <section id="calculation-area">
+        <h2 id="shape-title" style="margin-top:0; color:var(--utez-green)">Selecciona Figura</h2>
+        
+        <div id="inputs-container"></div>
+        
+        <div class="btn-row">
+            <button class="action-btn btn-calc" onclick="calculate()">Calcular Volumen</button>
+            <button class="action-btn btn-clear" onclick="clearInputs()">Borrar</button>
+        </div>
+        
+        <div id="result"></div>
+    </section>
+
+    <script>
+        let currentShape = '';
+
+        // Definición de las figuras con sus inputs necesarios
+        const shapes = {
+            elipsoide: {
+                title: "Volumen del Elipsoide",
+                inputs: [
+                    {id: "a", label: "Semieje a (X)"},
+                    {id: "b", label: "Semieje b (Y)"},
+                    {id: "c", label: "Semieje c (Z)"}
+                ]
+            },
+            conoEliptico: {
+                title: "Volumen del Cono Elíptico",
+                inputs: [
+                    {id: "a", label: "Semieje a (X)"},
+                    {id: "b", label: "Semieje b (Y)"},
+                    {id: "h", label: "Altura h"}
+                ]
+            },
+            paraboloide: {
+                title: "Volumen del Paraboloide Elíptico",
+                inputs: [
+                    {id: "a", label: "Semieje a (X)"},
+                    {id: "b", label: "Semieje b (Y)"},
+                    {id: "h", label: "Altura h"}
+                ]
+            },
+            hiper1hoja: {
+                title: "Hiperboloide de una Hoja",
+                note: "Volumen cortado por planos z=h y z=-h",
+                inputs: [
+                    {id: "a", label: "Valor de a"},
+                    {id: "b", label: "Valor de b"},
+                    {id: "c", label: "Valor de c"},
+                    {id: "h", label: "Altura desde -h a +h"}
+                ]
+            },
+            hiper2hojas: {
+                title: "Hiperboloide de dos Hojas",
+                note: "Volumen de un segmento de altura h desde el vértice",
+                inputs: [
+                    {id: "a", label: "Valor de a"},
+                    {id: "b", label: "Valor de b"},
+                    {id: "c", label: "Valor de c"},
+                    {id: "h", label: "Altura h del segmento"}
+                ]
+            }
+        };
+
+        function selectShape(key) {
+            currentShape = key;
+            const data = shapes[key];
+            const area = document.getElementById('calculation-area');
+            const container = document.getElementById('inputs-container');
+            const resultDiv = document.getElementById('result');
+
+            // Mostrar el área con animación
+            area.style.display = 'block';
+            document.getElementById('shape-title').innerText = data.title;
+            resultDiv.innerText = '';
+            resultDiv.style.display = 'none';
+
+            // Limpiar y crear inputs
+            container.innerHTML = '';
+            
+            // Si hay nota explicativa
+            if(data.note) {
+                const note = document.createElement('p');
+                note.style.fontSize = "0.8rem";
+                note.style.color = "#666";
+                note.innerText = data.note;
+                container.appendChild(note);
+            }
+
+            data.inputs.forEach(input => {
+                const div = document.createElement('div');
+                div.className = 'input-group';
+                div.innerHTML = `
+                    <label>${input.label}:</label>
+                    <input type="number" id="${input.id}" step="any" placeholder="Ingresa valor">
+                `;
+                container.appendChild(div);
+            });
+
+            // Scroll suave hacia el formulario
+            area.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function calculate() {
+            const getVal = (id) => parseFloat(document.getElementById(id).value);
+            let v = 0;
+            const pi = Math.PI;
+            
+            try {
+                if (currentShape === 'elipsoide') {
+                    // V = 4/3 * pi * a * b * c
+                    v = (4/3) * pi * getVal('a') * getVal('b') * getVal('c');
+                } 
+                else if (currentShape === 'conoEliptico') {
+                    // V = 1/3 * pi * a * b * h
+                    v = (1/3) * pi * getVal('a') * getVal('b') * getVal('h');
+                }
+                else if (currentShape === 'paraboloide') {
+                    // V = 1/2 * pi * a * b * h
+                    v = (0.5) * pi * getVal('a') * getVal('b') * getVal('h');
+                }
+                else if (currentShape === 'hiper1hoja') {
+                    // Integral de -h a h de Area(z)
+                    // V = 2 * pi * a * b * (h + h^3 / (3c^2))
+                    const a = getVal('a'), b = getVal('b'), c = getVal('c'), h = getVal('h');
+                    v = 2 * pi * a * b * (h + (Math.pow(h,3) / (3 * Math.pow(c,2))));
+                }
+                else if (currentShape === 'hiper2hojas') {
+                    // Volumen de casquete (bowl)
+                    // V = pi * a * b * ( (h^3)/(3c^2) + (h^2)/c )
+                    const a = getVal('a'), b = getVal('b'), c = getVal('c'), h = getVal('h');
+                    v = pi * a * b * ( (Math.pow(h,3)/(3*Math.pow(c,2))) + (Math.pow(h,2)/c) );
+                }
+
+                const resDiv = document.getElementById('result');
+                resDiv.style.display = 'block';
+
+                if (isNaN(v) || !isFinite(v)) {
+                    resDiv.innerText = "Por favor ingresa todos los valores correctamente.";
+                    resDiv.style.color = "red";
+                    resDiv.style.background = "#ffe6e6";
+                } else {
+                    resDiv.innerHTML = `Volumen = ${v.toFixed(4)} u³`;
+                    resDiv.style.color = "var(--utez-dark)";
+                    resDiv.style.background = "rgba(0,150,94,0.1)";
+                }
+
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
+        function clearInputs() {
+            document.querySelectorAll('input').forEach(i => i.value = '');
+            document.getElementById('result').style.display = 'none';
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const btn = document.querySelector('.toggle-mode');
+            if(document.body.classList.contains('dark-mode')){
+                btn.innerText = "☀️ Modo Día";
+            } else {
+                btn.innerText = "🌙 Modo Halcón";
+            }
+        }
+    </script>
+</body>
+</html>
