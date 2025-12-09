@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tarea Integradora UTEZ | Cálculo Vectorial</title>
+    <title>Tarea Integradora UTEZ | Cálculo Vectorial 3D</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
     <style>
         /* --- VARIABLES --- */
         :root {
@@ -14,6 +16,7 @@
             --text-color: #333;
             --card-bg: #ffffff;
             --header-bg: #ffffff;
+            --container-3d-bg: #e0e0e0;
         }
 
         body {
@@ -51,7 +54,7 @@
         }
 
         .logo-utez {
-            height: 70px; /* Ajusta según tu imagen real */
+            height: 70px;
             display: block;
         }
 
@@ -100,7 +103,7 @@
             display: inline-block;
         }
 
-        /* --- MENÚ DE FIGURAS 3D --- */
+        /* --- MENÚ DE FIGURAS --- */
         .menu-container {
             display: flex;
             justify-content: center;
@@ -113,8 +116,8 @@
         }
 
         .shape-card {
-            width: 150px;  /* Un poco más ancho para las imágenes */
-            height: 170px; /* Un poco más alto */
+            width: 150px;
+            height: 170px;
             background: var(--card-bg);
             border-radius: 15px;
             display: flex;
@@ -135,12 +138,11 @@
             border-bottom-color: var(--utez-gold);
         }
 
-        /* NUEVO ESTILO PARA LAS IMÁGENES */
         .shape-img {
-            height: 80px; /* Altura fija para que todas se vean parejas */
-            width: auto;  /* El ancho se ajusta automáticamente */
+            height: 80px;
+            width: auto;
             margin-bottom: 10px;
-            object-fit: contain; /* Asegura que la imagen se vea completa */
+            object-fit: contain;
         }
 
         .shape-card span {
@@ -149,14 +151,14 @@
             color: var(--utez-dark);
         }
 
-        /* --- ÁREA DE CÁLCULO --- */
+        /* --- ÁREA DE CÁLCULO Y 3D --- */
         #calculation-area {
             background: var(--card-bg);
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             width: 90%;
-            max-width: 500px;
+            max-width: 600px; /* Un poco más ancho para el 3D */
             text-align: center;
             display: none;
             border: 1px solid #eee;
@@ -168,6 +170,30 @@
         @keyframes slideUp {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* NUEVO: Contenedor para la escena 3D */
+        #container-3d {
+            width: 100%;
+            height: 350px;
+            background-color: var(--container-3d-bg);
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+            border: 2px solid var(--utez-green);
+            position: relative;
+        }
+        /* Etiqueta para los ejes 3D */
+        .axis-label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            color: #555;
+            background: rgba(255,255,255,0.7);
+            padding: 2px 5px;
+            border-radius: 4px;
+            pointer-events: none;
         }
 
         .input-group { margin: 15px 0; text-align: left; }
@@ -232,6 +258,7 @@
             --text-color: #f0f0f0;
             --card-bg: #1e1e1e;
             --header-bg: #1a1a1a;
+            --container-3d-bg: #333;
         }
         
         body.dark-mode .header-content h1 { color: #fff; }
@@ -254,11 +281,11 @@
         
         <div class="header-content">
             <h1>Tarea Integradora Cálculo de Varias Variables</h1>
-            <p class="subtitle">Propósito: Cálculo de Volúmenes 3D</p>
-            <p class="profesor">Profesor: Luis Ramirez</p>
+            <p class="subtitle">Propósito: Cálculo de Volúmenes y Modelado 3D</p>
+            <p class="profesor">Profesor: Cesar Ramirez</p>
             
             <div class="integrantes">
-                Integrantes: | Rodrigo Arvizu | Jose Manuel | Uriel Solano | Emmanuel Alvarez | Eliel Vasquez |
+                Integrantes: | Rodrigo Arvizu | Jose Manuel | Uriel Solano | Emmanuel Aviles | Eliel Vasquez |
             </div>
         </div>
     </header>
@@ -289,10 +316,14 @@
     <section id="calculation-area">
         <h2 id="shape-title" style="margin-top:0; color:var(--utez-green)">Selecciona Figura</h2>
         
+        <div id="container-3d">
+            <div class="axis-label">Rojo: X | Verde: Y | Azul: Z</div>
+        </div>
+
         <div id="inputs-container"></div>
         
         <div class="btn-row">
-            <button class="action-btn btn-calc" onclick="calculate()">Calcular Volumen</button>
+            <button class="action-btn btn-calc" onclick="calculateAndRender()">Calcular y Modelar 3D</button>
             <button class="action-btn btn-clear" onclick="clearInputs()">Borrar</button>
         </div>
         
@@ -301,54 +332,77 @@
 
     <script>
         let currentShape = '';
+        // Variables globales para Three.js
+        let scene, camera, renderer, currentMesh, axesHelper;
 
-        // Definición de las figuras con sus inputs necesarios
+        // Definición de las figuras e inputs
         const shapes = {
             elipsoide: {
-                title: "Volumen del Elipsoide",
-                inputs: [
-                    {id: "a", label: "Semieje a (X)"},
-                    {id: "b", label: "Semieje b (Y)"},
-                    {id: "c", label: "Semieje c (Z)"}
-                ]
+                title: "Elipsoide",
+                inputs: [{id: "a", label: "Semieje a (X)"}, {id: "b", label: "Semieje b (Y)"}, {id: "c", label: "Semieje c (Z)"}]
             },
             conoEliptico: {
-                title: "Volumen del Cono Elíptico",
-                inputs: [
-                    {id: "a", label: "Semieje a (X)"},
-                    {id: "b", label: "Semieje b (Y)"},
-                    {id: "h", label: "Altura h"}
-                ]
+                title: "Cono Elíptico",
+                inputs: [{id: "a", label: "Semieje a (X)"}, {id: "b", label: "Semieje b (Y)"}, {id: "h", label: "Altura h (Z)"}]
             },
             paraboloide: {
-                title: "Volumen del Paraboloide Elíptico",
-                inputs: [
-                    {id: "a", label: "Semieje a (X)"},
-                    {id: "b", label: "Semieje b (Y)"},
-                    {id: "h", label: "Altura h"}
-                ]
+                title: "Paraboloide Elíptico",
+                inputs: [{id: "a", label: "Semieje a (X)"}, {id: "b", label: "Semieje b (Y)"}, {id: "h", label: "Altura h (Z)"}]
             },
             hiper1hoja: {
-                title: "Hiperboloide de una Hoja",
-                note: "Volumen cortado por planos z=h y z=-h",
-                inputs: [
-                    {id: "a", label: "Valor de a"},
-                    {id: "b", label: "Valor de b"},
-                    {id: "c", label: "Valor de c"},
-                    {id: "h", label: "Altura desde -h a +h"}
-                ]
+                title: "Hiperboloide (1 Hoja)",
+                note: "Visualización entre z = -h y z = +h",
+                inputs: [{id: "a", label: "Valor a (X)"}, {id: "b", label: "Valor b (Y)"}, {id: "c", label: "Valor c (Z)"}, {id: "h", label: "Mitad de Altura h"}]
             },
             hiper2hojas: {
-                title: "Hiperboloide de dos Hojas",
-                note: "Volumen de un segmento de altura h desde el vértice",
-                inputs: [
-                    {id: "a", label: "Valor de a"},
-                    {id: "b", label: "Valor de b"},
-                    {id: "c", label: "Valor de c"},
-                    {id: "h", label: "Altura h del segmento"}
-                ]
+                title: "Hiperboloide (2 Hojas)",
+                note: "Visualización de segmentos superior e inferior",
+                inputs: [{id: "a", label: "Valor a (X)"}, {id: "b", label: "Valor b (Y)"}, {id: "c", label: "Valor c (Z)"}, {id: "h", label: "Altura h del segmento"}]
             }
         };
+
+        // --- INICIALIZACIÓN DE THREE.JS ---
+        function init3D() {
+            const container = document.getElementById('container-3d');
+            // Si ya existe, no reiniciamos
+            if (container.getElementsByTagName('canvas').length > 0) return;
+
+            scene = new THREE.Scene();
+            // Cámara: Campo de visión, aspecto, plano cercano, plano lejano
+            camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            // Posición inicial de la cámara
+            camera.position.set(15, 15, 15);
+            camera.lookAt(0, 0, 0);
+
+            // Iluminación básica
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 20, 10);
+            scene.add(directionalLight);
+
+            // Ejes de referencia (Rojo=X, Verde=Y, Azul=Z)
+            axesHelper = new THREE.AxesHelper(10);
+            scene.add(axesHelper);
+
+            animate();
+        }
+
+        // Bucle de animación para que el objeto rote
+        function animate() {
+            requestAnimationFrame(animate);
+            if (currentMesh) {
+                currentMesh.rotation.y += 0.005; // Rotación suave
+            }
+            renderer.render(scene, camera);
+        }
+
+        // --- FUNCIONES DE LA LÓGICA DE LA PÁGINA ---
 
         function selectShape(key) {
             currentShape = key;
@@ -357,101 +411,174 @@
             const container = document.getElementById('inputs-container');
             const resultDiv = document.getElementById('result');
 
-            // Mostrar el área con animación
             area.style.display = 'block';
             document.getElementById('shape-title').innerText = data.title;
-            resultDiv.innerText = '';
             resultDiv.style.display = 'none';
-
-            // Limpiar y crear inputs
             container.innerHTML = '';
-            
-            // Si hay nota explicativa
+
             if(data.note) {
                 const note = document.createElement('p');
-                note.style.fontSize = "0.8rem";
-                note.style.color = "#666";
-                note.innerText = data.note;
+                note.style.fontSize = "0.8rem"; note.style.color = "#666"; note.innerText = data.note;
                 container.appendChild(note);
             }
 
             data.inputs.forEach(input => {
                 const div = document.createElement('div');
                 div.className = 'input-group';
-                div.innerHTML = `
-                    <label>${input.label}:</label>
-                    <input type="number" id="${input.id}" step="any" placeholder="Ingresa valor">
-                `;
+                div.innerHTML = `<label>${input.label}:</label><input type="number" id="${input.id}" step="any" placeholder="Valor > 0">`;
                 container.appendChild(div);
             });
 
-            // Scroll suave hacia el formulario
             area.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-
-        function calculate() {
-            const getVal = (id) => parseFloat(document.getElementById(id).value);
-            let v = 0;
-            const pi = Math.PI;
             
-            try {
-                if (currentShape === 'elipsoide') {
-                    // V = 4/3 * pi * a * b * c
-                    v = (4/3) * pi * getVal('a') * getVal('b') * getVal('c');
-                } 
-                else if (currentShape === 'conoEliptico') {
-                    // V = 1/3 * pi * a * b * h
-                    v = (1/3) * pi * getVal('a') * getVal('b') * getVal('h');
-                }
-                else if (currentShape === 'paraboloide') {
-                    // V = 1/2 * pi * a * b * h
-                    v = (0.5) * pi * getVal('a') * getVal('b') * getVal('h');
-                }
-                else if (currentShape === 'hiper1hoja') {
-                    // Integral de -h a h de Area(z)
-                    // V = 2 * pi * a * b * (h + h^3 / (3c^2))
-                    const a = getVal('a'), b = getVal('b'), c = getVal('c'), h = getVal('h');
-                    v = 2 * pi * a * b * (h + (Math.pow(h,3) / (3 * Math.pow(c,2))));
-                }
-                else if (currentShape === 'hiper2hojas') {
-                    // Volumen de casquete (bowl)
-                    // V = pi * a * b * ( (h^3)/(3c^2) + (h^2)/c )
-                    const a = getVal('a'), b = getVal('b'), c = getVal('c'), h = getVal('h');
-                    v = pi * a * b * ( (Math.pow(h,3)/(3*Math.pow(c,2))) + (Math.pow(h,2)/c) );
-                }
-
-                const resDiv = document.getElementById('result');
-                resDiv.style.display = 'block';
-
-                if (isNaN(v) || !isFinite(v)) {
-                    resDiv.innerText = "Por favor ingresa todos los valores correctamente.";
-                    resDiv.style.color = "red";
-                    resDiv.style.background = "#ffe6e6";
-                } else {
-                    resDiv.innerHTML = `Volumen = ${v.toFixed(4)} u³`;
-                    resDiv.style.color = "var(--utez-dark)";
-                    resDiv.style.background = "rgba(0,150,94,0.1)";
-                }
-
-            } catch (e) {
-                console.log(e);
-            }
+            // Inicializar el entorno 3D si no se ha hecho
+            init3D();
+            // Limpiar figura anterior si existe
+            if (currentMesh) { scene.remove(currentMesh); currentMesh = null; }
         }
+
+        // --- FUNCIÓN PRINCIPAL: CALCULAR Y MODELAR ---
+        function calculateAndRender() {
+            // 1. Validar Inputs
+            const inputs = document.querySelectorAll('#inputs-container input');
+            let valid = true;
+            const params = {};
+            inputs.forEach(i => {
+                const val = parseFloat(i.value);
+                if (isNaN(val) || val <= 0) valid = false;
+                params[i.id] = val;
+            });
+
+            const resDiv = document.getElementById('result');
+            resDiv.style.display = 'block';
+
+            if (!valid) {
+                resDiv.innerText = "Por favor ingresa valores positivos válidos en todos los campos.";
+                resDiv.style.color = "red"; resDiv.style.background = "#ffe6e6";
+                if (currentMesh) { scene.remove(currentMesh); currentMesh = null; }
+                return;
+            }
+
+            // 2. Calcular Volumen (Lógica anterior)
+            let v = 0; const pi = Math.PI;
+            const { a, b, c, h } = params;
+
+            if (currentShape === 'elipsoide') v = (4/3) * pi * a * b * c;
+            else if (currentShape === 'conoEliptico') v = (1/3) * pi * a * b * h;
+            else if (currentShape === 'paraboloide') v = (0.5) * pi * a * b * h;
+            else if (currentShape === 'hiper1hoja') v = 2 * pi * a * b * (h + (Math.pow(h,3) / (3 * Math.pow(c,2))));
+            else if (currentShape === 'hiper2hojas') v = 2 * (pi * a * b * ( (Math.pow(h,3)/(3*Math.pow(c,2))) + (Math.pow(h,2)/c) )); // Multiplicado por 2 para ambas hojas
+
+            resDiv.innerHTML = `Volumen Total ≈ ${v.toFixed(4)} u³`;
+            resDiv.style.color = "var(--utez-dark)"; resDiv.style.background = "rgba(0,150,94,0.1)";
+
+            // 3. Generar Modelo 3D
+            update3DModel(currentShape, params);
+        }
+
+        // --- GENERACIÓN DE GEOMETRÍAS 3D ---
+        function update3DModel(shape, params) {
+            if (currentMesh) scene.remove(currentMesh);
+            const { a, b, c, h } = params;
+            
+            // Materiales: Sólido para figuras cerradas, Wireframe para abiertas
+            const materialSolid = new THREE.MeshPhongMaterial({ 
+                color: 0x00965e, transparent: true, opacity: 0.8, shininess: 100 
+            });
+            const materialWireframe = new THREE.LineBasicMaterial({ color: 0x004d33 });
+
+            switch (shape) {
+                case 'elipsoide':
+                    // Esfera escalada en X, Y, Z
+                    const sphereGeo = new THREE.SphereGeometry(1, 32, 32);
+                    currentMesh = new THREE.Mesh(sphereGeo, materialSolid);
+                    currentMesh.scale.set(a, b, c);
+                    break;
+
+                case 'conoEliptico':
+                    // Cono escalado en X, Y. Altura h.
+                    const coneGeo = new THREE.ConeGeometry(1, h, 32);
+                    currentMesh = new THREE.Mesh(coneGeo, materialSolid);
+                    currentMesh.scale.set(a, b, 1); // Escalar radio base X e Y
+                    // Mover el cono hacia arriba para que la base esté en z=0 (Threejs centra el cono)
+                    currentMesh.position.y = h / 2; 
+                    // Rotar para que apunte hacia Z (opcional, depende de tu preferencia de ejes)
+                    currentMesh.rotation.x = Math.PI / 2;
+                    break;
+
+                // --- FIGURAS COMPLEJAS (Estilo Wireframe Matemático) ---
+                case 'paraboloide':
+                case 'hiper1hoja':
+                case 'hiper2hojas':
+                    currentMesh = generateComplexShape(shape, a, b, c, h, materialWireframe);
+                    break;
+            }
+
+            if (currentMesh) scene.add(currentMesh);
+        }
+
+        // Función auxiliar para generar las figuras "difíciles" usando líneas
+        function generateComplexShape(type, a, b, c, h, material) {
+            const points = [];
+            const segments = 20; // Resolución vertical
+            const radialSegments = 32; // Resolución angular
+
+            for (let i = 0; i <= segments; i++) {
+                // Calcular la altura z actual según el tipo de figura
+                let z;
+                if (type === 'paraboloide') z = (i / segments) * h; // z va de 0 a h
+                else if (type === 'hiper1hoja') z = (i / segments) * 2 * h - h; // z va de -h a h
+                else if (type === 'hiper2hojas') {
+                     // Hacemos la hoja superior. z va de c a c+h
+                     z = c + (i / segments) * h; 
+                }
+
+                // Calcular el radio efectivo en esta altura z basado en la fórmula
+                let radiusScale = 0;
+                if (type === 'paraboloide') radiusScale = Math.sqrt(z / c) || 0; // Asumiendo c=1 para la forma estándar z = x²/a² + y²/b²
+                else if (type === 'hiper1hoja') radiusScale = Math.sqrt(1 + (z*z)/(c*c)); // x²/a² + y²/b² - z²/c² = 1
+                else if (type === 'hiper2hojas') radiusScale = Math.sqrt((z*z)/(c*c) - 1); // z²/c² - x²/a² - y²/b² = 1
+
+                // Generar el anillo elíptico a esta altura
+                for (let j = 0; j <= radialSegments; j++) {
+                    const theta = (j / radialSegments) * Math.PI * 2;
+                    const x = a * radiusScale * Math.cos(theta);
+                    const y = b * radiusScale * Math.sin(theta);
+                    points.push(new THREE.Vector3(x, y, z));
+                    // Para hiperboloide de 2 hojas, añadir la hoja inferior simétrica
+                    if(type === 'hiper2hojas') points.push(new THREE.Vector3(x, y, -z)); 
+                }
+            }
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            // Usamos LineSegments para un look de "anillos" apilados
+            return new THREE.LineSegments(geometry, material);
+        }
+
 
         function clearInputs() {
-            document.querySelectorAll('input').forEach(i => i.value = '');
+            document.querySelectorAll('#inputs-container input').forEach(i => i.value = '');
             document.getElementById('result').style.display = 'none';
+            if (currentMesh) { scene.remove(currentMesh); currentMesh = null; }
         }
 
         function toggleTheme() {
             document.body.classList.toggle('dark-mode');
             const btn = document.querySelector('.toggle-mode');
-            if(document.body.classList.contains('dark-mode')){
-                btn.innerText = "☀️ Modo Día";
-            } else {
-                btn.innerText = "🌙 Modo Halcón";
-            }
+            btn.innerText = document.body.classList.contains('dark-mode') ? "☀️ Modo Día" : "🌙 Modo Halcón";
+            // Ajustar color del fondo 3D en modo oscuro
+             if(renderer) renderer.setClearColor(document.body.classList.contains('dark-mode') ? 0x333333 : 0xe0e0e0);
         }
+
+        // Ajustar el tamaño del renderizador si cambia el tamaño de la ventana
+        window.addEventListener('resize', () => {
+            if(camera && renderer) {
+                const container = document.getElementById('container-3d');
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
+        });
     </script>
 </body>
 </html>
